@@ -24,6 +24,7 @@ _get_abs_path = lambda path: os.path.normpath(os.path.join(os.getcwd(), path))
 
 DEFAULT_DICT = None
 DEFAULT_DICT_NAME = "dict.txt"
+DEFAULT_FLAG_NAME = "flag.txt"
 
 log_console = logging.StreamHandler(sys.stderr)
 default_logger = logging.getLogger(__name__)
@@ -63,6 +64,7 @@ class Tokenizer(object):
         self.initialized = False
         self.tmp_dir = None
         self.cache_file = None
+        self.FLAG = {}
 
     def __repr__(self):
         return '<Tokenizer dictionary=%r>' % self.dictionary
@@ -89,6 +91,17 @@ class Tokenizer(object):
         return lfreq, ltotal
 
     def initialize(self, dictionary=None):
+        # Add flag dict--------
+        try:
+            f_in = get_module_res(DEFAULT_FLAG_NAME)
+            list_temp = []
+            for line in f_in:
+                list_temp = line.strip().split("\t")
+                self.FLAG[list_temp[0]] = list_temp[1]
+            f_in.close()
+        except IOError:
+            pass
+        # ---------------------
         if dictionary:
             abs_path = _get_abs_path(dictionary)
             if self.dictionary == abs_path and self.initialized:
@@ -398,6 +411,10 @@ class Tokenizer(object):
         freq and tag can be omitted, freq defaults to be a calculated value
         that ensures the word can be cut out.
         """
+        # ---Add tag to dict_flag---
+        if tag:
+            self.FLAG[tag] = "Notional"
+        # --------------------------
         self.check_initialized()
         word = strdecode(word)
         freq = int(freq) if freq is not None else self.suggest_freq(word, False)

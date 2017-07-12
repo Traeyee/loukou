@@ -2,7 +2,7 @@ from __future__ import absolute_import, unicode_literals
 import os
 import re
 import sys
-import jieba
+import loukou
 import pickle
 from .._compat import *
 from .viterbi import viterbi
@@ -78,7 +78,7 @@ class pair(object):
 class POSTokenizer(object):
 
     def __init__(self, tokenizer=None):
-        self.tokenizer = tokenizer or jieba.Tokenizer()
+        self.tokenizer = tokenizer or loukou.Tokenizer()
         self.load_word_tag(self.tokenizer.get_dict_file())
 
     def __repr__(self):
@@ -252,9 +252,17 @@ class POSTokenizer(object):
     def lcut(self, *args, **kwargs):
         return list(self.cut(*args, **kwargs))
 
+    # Added by Traeyee on 7/12/2017
+    def cut_filter(self, sentence, *flags_target):
+        list_rt = []
+        for item in self.cut(sentence):
+            if self.FLAG[item.flag] in flags_target:
+                list_rt.append(item)
+        return list_rt
+
 # default Tokenizer instance
 
-dt = POSTokenizer(jieba.dt)
+dt = POSTokenizer(loukou.dt)
 
 # global functions
 
@@ -277,15 +285,15 @@ def cut(sentence, HMM=True):
     instances are not supported.
     """
     global dt
-    if jieba.pool is None:
+    if loukou.pool is None:
         for w in dt.cut(sentence, HMM=HMM):
             yield w
     else:
         parts = strdecode(sentence).splitlines(True)
         if HMM:
-            result = jieba.pool.map(_lcut_internal, parts)
+            result = loukou.pool.map(_lcut_internal, parts)
         else:
-            result = jieba.pool.map(_lcut_internal_no_hmm, parts)
+            result = loukou.pool.map(_lcut_internal_no_hmm, parts)
         for r in result:
             for w in r:
                 yield w
