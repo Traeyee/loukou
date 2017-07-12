@@ -103,6 +103,8 @@ class POSTokenizer(object):
                 if not line:
                     continue
                 word, _, tag = line.split(" ")
+                if tag == "ug":
+                    print "db"
                 self.word_tag_tab[word] = tag
             except Exception:
                 raise ValueError(

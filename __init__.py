@@ -50,9 +50,10 @@ def setLogLevel(log_level):
     global logger
     default_logger.setLevel(log_level)
 
+
 class Tokenizer(object):
 
-    def __init__(self, dictionary=DEFAULT_DICT):
+    def __init__(self, dictionary=DEFAULT_DICT, no_cache=False):
         self.lock = threading.RLock()
         if dictionary == DEFAULT_DICT:
             self.dictionary = dictionary
@@ -65,6 +66,7 @@ class Tokenizer(object):
         self.tmp_dir = None
         self.cache_file = None
         self.FLAG = {}
+        self.no_cache = no_cache
 
     def __repr__(self):
         return '<Tokenizer dictionary=%r>' % self.dictionary
@@ -127,10 +129,10 @@ class Tokenizer(object):
                 cache_file = self.cache_file
             # default dictionary
             elif abs_path == DEFAULT_DICT:
-                cache_file = "jieba.cache"
+                cache_file = "loukou.cache"
             # custom dictionary
             else:
-                cache_file = "jieba.u%s.cache" % md5(
+                cache_file = "loukou.u%s.cache" % md5(
                     abs_path.encode('utf-8', 'replace')).hexdigest()
             cache_file = os.path.join(
                 self.tmp_dir or tempfile.gettempdir(), cache_file)
@@ -138,10 +140,12 @@ class Tokenizer(object):
             tmpdir = os.path.dirname(cache_file)
 
             load_from_cache_fail = True
-            if os.path.isfile(cache_file) and (abs_path == DEFAULT_DICT or
-                os.path.getmtime(cache_file) > os.path.getmtime(abs_path)):
+            if not self.no_cache \
+                    and os.path.isfile(cache_file) \
+                    and (abs_path == DEFAULT_DICT or os.path.getmtime(cache_file) > os.path.getmtime(abs_path)):
                 default_logger.debug(
                     "Loading model from cache %s" % cache_file)
+
                 try:
                     with open(cache_file, 'rb') as cf:
                         self.FREQ, self.total = marshal.load(cf)
@@ -474,7 +478,7 @@ class Tokenizer(object):
             - HMM: whether to use the Hidden Markov Model.
         """
         if not isinstance(unicode_sentence, text_type):
-            raise ValueError("jieba: the input parameter should be unicode.")
+            raise ValueError("loukou: the input parameter should be unicode.")
         start = 0
         if mode == 'default':
             for w in self.cut(unicode_sentence, HMM=HMM):
@@ -501,7 +505,7 @@ class Tokenizer(object):
         with self.lock:
             abs_path = _get_abs_path(dictionary_path)
             if not os.path.isfile(abs_path):
-                raise Exception("jieba: file does not exist: " + abs_path)
+                raise Exception("loukou: file does not exist: " + abs_path)
             self.dictionary = abs_path
             self.initialized = False
 
@@ -590,7 +594,7 @@ def enable_parallel(processnum=None):
     from multiprocessing import cpu_count
     if os.name == 'nt':
         raise NotImplementedError(
-            "jieba: parallel mode only supports posix system")
+            "loukou: parallel mode only supports posix system")
     else:
         from multiprocessing import Pool
     dt.check_initialized()
