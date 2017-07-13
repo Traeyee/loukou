@@ -3,6 +3,7 @@ ad	Notional
 ag	Notional
 an	Notional
 b	Notional
+bg	Notional
 c	Function
 d	Notional
 df	Notional
@@ -13,9 +14,12 @@ f	Notional
 g	Function
 h	Function
 i	Notional
+in	Notional
 j	Notional
+jn	Notional
 k	Function
 l	Notional
+ln	Notional
 m	Notional
 mg	Notional
 mq	Notional
@@ -30,6 +34,8 @@ nz	Notional
 o	Function
 p	Function
 q	Notional
+qe	Notional
+qg	Notional
 r	Notional
 rg	Notional
 rr	Notional
@@ -52,5 +58,6 @@ vn	Notional
 vq	Notional
 x	Function
 y	Function
+yg	Function
 z	Function
 zg	Function
