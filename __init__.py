@@ -1,5 +1,5 @@
 from __future__ import absolute_import, unicode_literals
-__version__ = '0.38'
+__version__ = '0.02'
 __license__ = 'MIT'
 
 import re
@@ -51,7 +51,7 @@ def setLogLevel(log_level):
     default_logger.setLevel(log_level)
 
 
-class Tokenizer(object):
+class Loukou(object):
 
     def __init__(self, dictionary=DEFAULT_DICT, no_cache=False):
         self.lock = threading.RLock()
@@ -510,28 +510,30 @@ class Tokenizer(object):
             self.initialized = False
 
 
+# Commented by Traeyee on 7/18/2017
+
 # default Tokenizer instance
 
-dt = Tokenizer()
+# dt = Tokenizer()
 
 # global functions
 
-get_FREQ = lambda k, d=None: dt.FREQ.get(k, d)
-add_word = dt.add_word
-calc = dt.calc
-cut = dt.cut
-lcut = dt.lcut
-cut_for_search = dt.cut_for_search
-lcut_for_search = dt.lcut_for_search
-del_word = dt.del_word
-get_DAG = dt.get_DAG
-get_dict_file = dt.get_dict_file
-initialize = dt.initialize
-load_userdict = dt.load_userdict
-set_dictionary = dt.set_dictionary
-suggest_freq = dt.suggest_freq
-tokenize = dt.tokenize
-user_word_tag_tab = dt.user_word_tag_tab
+# get_FREQ = lambda k, d=None: dt.FREQ.get(k, d)
+# add_word = dt.add_word
+# calc = dt.calc
+# cut = dt.cut
+# lcut = dt.lcut
+# cut_for_search = dt.cut_for_search
+# lcut_for_search = dt.lcut_for_search
+# del_word = dt.del_word
+# get_DAG = dt.get_DAG
+# get_dict_file = dt.get_dict_file
+# initialize = dt.initialize
+# load_userdict = dt.load_userdict
+# set_dictionary = dt.set_dictionary
+# suggest_freq = dt.suggest_freq
+# tokenize = dt.tokenize
+# user_word_tag_tab = dt.user_word_tag_tab
 
 
 def _lcut_all(s):

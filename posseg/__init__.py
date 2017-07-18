@@ -264,7 +264,7 @@ class POSTokenizer(object):
 
 # default Tokenizer instance
 
-dt = POSTokenizer(loukou.dt)
+dt = POSTokenizer(loukou.Loukou())
 
 # global functions
 
