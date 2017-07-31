@@ -187,7 +187,7 @@ class Loukou(object):
     def calc(self, sentence, DAG, route):
         N = len(sentence)
         route[N] = (0, 0)
-        logtotal = log(self.total)
+        logtotal = log(self.total or 1)  # Modified by Traeyee  7/31/2017
         for idx in xrange(N - 1, -1, -1):
             route[idx] = max((log(self.FREQ.get(sentence[idx:x + 1]) or 1) -
                               logtotal + route[x + 1][0], x) for x in DAG[idx])

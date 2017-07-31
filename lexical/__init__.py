@@ -22,6 +22,8 @@ re_num = re.compile("[\.0-9]+")
 
 re_eng1 = re.compile('^[a-zA-Z0-9]$', re.U)
 
+dir_mod = os.path.split(os.path.realpath(__file__))[0]
+
 
 def load_model():
     # For Jython
@@ -78,8 +80,11 @@ class Pair(object):
 class Lexical(object):
 
     def __init__(self, tokenizer=None):
-        self.tokenizer = tokenizer or loukou.Tokenizer()
-        self.load_word_tag(self.tokenizer.get_dict_file())
+        self.tokenizer = tokenizer or loukou.Loukou()
+        self.tokenizer_tag = None
+        self.word_tag = {}
+        self.word_tag_newdict = {}
+        self.load_word_tag(self.tokenizer.get_dict_file(), self.word_tag)
 
     def __repr__(self):
         return '<Lexical tokenizer=%r>' % self.tokenizer
@@ -94,8 +99,7 @@ class Lexical(object):
         self.tokenizer.initialize(dictionary)
         self.load_word_tag(self.tokenizer.get_dict_file())
 
-    def load_word_tag(self, f):
-        self.word_tag_tab = {}
+    def load_word_tag(self, f, table):
         f_name = resolve_filename(f)
         for lineno, line in enumerate(f, 1):
             try:
@@ -103,7 +107,7 @@ class Lexical(object):
                 if not line:
                     continue
                 word, _, tag = line.split(" ")
-                self.word_tag_tab[word] = tag
+                table[word] = tag
             except Exception:
                 raise ValueError(
                     'invalid POS dictionary entry in %s at Line %s: %s' % (f_name, lineno, line))
@@ -111,8 +115,8 @@ class Lexical(object):
 
     def makesure_userdict_loaded(self):
         if self.tokenizer.user_word_tag_tab:
-            self.word_tag_tab.update(self.tokenizer.user_word_tag_tab)
-            self.tokenizer.user_word_tag_tab = {}
+            self.word_tag.update(self.tokenizer.user_word_tag_tab)
+            self.tokenizer.user_word_tag = {}
 
     def __cut(self, sentence):
         prob, pos_list = viterbi(
@@ -147,9 +151,10 @@ class Lexical(object):
                         elif re_eng.match(x):
                             yield Pair(x, 'eng')
                         else:
-                            yield Pair(x, 'x')
+                            yield Pair(x, 'unknown')
 
-    def __cut_DAG_NO_HMM(self, sentence):
+    def __cut_DAG_NO_HMM(self, sentence, dict_tag=None):
+        dict_tag = dict_tag or self.word_tag
         DAG = self.tokenizer.get_DAG(sentence)
         route = {}
         self.tokenizer.calc(sentence, DAG, route)
@@ -166,13 +171,14 @@ class Lexical(object):
                 if buf:
                     yield Pair(buf, 'eng')
                     buf = ''
-                yield Pair(l_word, self.word_tag_tab.get(l_word, 'x'))
+                yield Pair(l_word, self.word_tag.get(l_word, 'unknown'))
                 x = y
         if buf:
             yield Pair(buf, 'eng')
             buf = ''
 
-    def __cut_DAG(self, sentence):
+    def __cut_DAG(self, sentence, dict_tag=None):
+        dict_tag = dict_tag or self.word_tag
         DAG = self.tokenizer.get_DAG(sentence)
         route = {}
 
@@ -189,30 +195,30 @@ class Lexical(object):
             else:
                 if buf:
                     if len(buf) == 1:
-                        yield Pair(buf, self.word_tag_tab.get(buf, 'x'))
+                        yield Pair(buf, dict_tag.get(buf, 'unknown'))
                     elif not self.tokenizer.FREQ.get(buf):
                         recognized = self.__cut_detail(buf)
                         for t in recognized:
                             yield t
                     else:
                         for elem in buf:
-                            yield Pair(elem, self.word_tag_tab.get(elem, 'x'))
+                            yield Pair(elem, dict_tag.get(elem, 'unknown'))
                     buf = ''
-                yield Pair(l_word, self.word_tag_tab.get(l_word, 'x'))
+                yield Pair(l_word, dict_tag.get(l_word, 'unknown'))
             x = y
 
         if buf:
             if len(buf) == 1:
-                yield Pair(buf, self.word_tag_tab.get(buf, 'x'))
+                yield Pair(buf, dict_tag.get(buf, 'unknown'))
             elif not self.tokenizer.FREQ.get(buf):
                 recognized = self.__cut_detail(buf)
                 for t in recognized:
                     yield t
             else:
                 for elem in buf:
-                    yield Pair(elem, self.word_tag_tab.get(elem, 'x'))
+                    yield Pair(elem, dict_tag.get(elem, 'unknown'))
 
-    def __cut_internal(self, sentence, HMM=True):
+    def __cut_internal(self, sentence, HMM=True, dict_tag=None):
         self.makesure_userdict_loaded()
         sentence = strdecode(sentence)
         blocks = re_han_internal.split(sentence)
@@ -223,13 +229,13 @@ class Lexical(object):
 
         for blk in blocks:
             if re_han_internal.match(blk):
-                for word in cut_blk(blk):
+                for word in cut_blk(blk, dict_tag):
                     yield word
             else:
                 tmp = re_skip_internal.split(blk)
                 for x in tmp:
                     if re_skip_internal.match(x):
-                        yield Pair(x, 'x')
+                        yield Pair(x, 'unknown')
                     else:
                         for xx in x:
                             if re_num.match(xx):
@@ -237,7 +243,7 @@ class Lexical(object):
                             elif re_eng.match(x):
                                 yield Pair(xx, 'eng')
                             else:
-                                yield Pair(xx, 'x')
+                                yield Pair(xx, 'unknown')
 
     def _lcut_internal(self, sentence):
         return list(self.__cut_internal(sentence))
@@ -245,8 +251,8 @@ class Lexical(object):
     def _lcut_internal_no_hmm(self, sentence):
         return list(self.__cut_internal(sentence, False))
 
-    def cut(self, sentence, HMM=True):
-        for w in self.__cut_internal(sentence, HMM=HMM):
+    def cut(self, sentence, HMM=True, dict_tag=None):
+        for w in self.__cut_internal(sentence, HMM=HMM, dict_tag=dict_tag):
             yield w
 
     def lcut(self, *args, **kwargs):
@@ -259,6 +265,31 @@ class Lexical(object):
             if self.FLAG[item.flag] in flags_target:
                 list_rt.append(item)
         return list_rt
+
+    # Added by Traeyee on 7/31/2017
+    def init_tokenizer_tag(self, path_or_listoftuple):
+        if isinstance(path_or_listoftuple, str):
+            self.tokenizer_tag = loukou.Loukou(path_or_listoftuple, False)
+            self.load_word_tag(open(path_or_listoftuple, "r"), self.word_tag_newdict)
+        elif isinstance(path_or_listoftuple, list):
+            self.tokenizer_tag = loukou.Loukou(os.path.join(dir_mod, "empty.txt"), False)
+            for t in path_or_listoftuple:
+                self.tokenizer_tag.add_word(t[0], t[1], t[2])
+        else:
+            print r"error"
+
+    def cut_tag(self, sentence, path_or_listoftuple=None):
+        if path_or_listoftuple:
+            self.init_tokenizer_tag(path_or_listoftuple)
+        if not self.tokenizer_tag:
+            self.init_tokenizer_tag([])
+
+        tokenizer_tmp, self.tokenizer = self.tokenizer, self.tokenizer_tag
+        self.word_tag = self.word_tag_newdict
+        for p in self.cut(sentence, False, self.word_tag):
+            yield p
+        self.tokenizer = tokenizer_tmp
+
 
 # default Tokenizer instance
 

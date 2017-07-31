@@ -31,6 +31,7 @@ else:
     itervalues = lambda d: iter(d.values())
     iteritems = lambda d: iter(d.items())
 
+
 def strdecode(sentence):
     if not isinstance(sentence, text_type):
         try:
@@ -38,6 +39,7 @@ def strdecode(sentence):
         except UnicodeDecodeError:
             sentence = sentence.decode('gbk', 'ignore')
     return sentence
+
 
 def resolve_filename(f):
     try:
